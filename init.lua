@@ -76,6 +76,9 @@ require('lazy').setup({
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
 
+  'tpope/vim-surround',
+  'tpope/vim-repeat',
+
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
   {
@@ -88,7 +91,7 @@ require('lazy').setup({
 
       -- Useful status updates for LSP
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim', opts = {} },
+      { 'j-hui/fidget.nvim', tag = "legacy", opts = {} },
 
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',
@@ -193,8 +196,12 @@ require('lazy').setup({
     -- Theme inspired by Atom
     'navarasu/onedark.nvim',
     priority = 1000,
+    opts = {
+      style = 'light',
+    },
     config = function()
       vim.cmd.colorscheme 'onedark'
+      vim.o.background = 'light'
     end,
   },
 
@@ -254,6 +261,57 @@ require('lazy').setup({
     build = ':TSUpdate',
   },
 
+  {
+    'Pocco81/true-zen.nvim',
+    opts = {
+      integrations = {
+        kitty = {
+          enabled = true,
+          font = '+3',
+        }
+      },
+    }
+  },
+
+  {'epwalsh/obsidian.nvim',
+    version = 'v1.*',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-telescope/telescope.nvim', -- optional
+      'hrsh7th/nvim-cmp', -- optional
+      'preservim/vim-markdown', -- optional
+      'godlygeek/tabular', -- optional, needed by vim-markdown
+    },
+    opts = {
+      dir = '~/notes/kb',
+      disable_frontmatter = true,
+      daily_notes = {
+        folder = 'daily',
+      },
+      templates = {
+        subdir = 'templates',
+      },
+      completion = {
+        nvim_cmp = true, -- if using nvim-cmp, otherwise set to false
+      },
+      mappings = {
+      },
+      note_id_func = function(title)
+        return title
+      end,
+    },
+
+  },
+
+  { 'nvim-orgmode/orgmode',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+    }
+  },
+
+  { 'Luxed/aw-watcher-nvim' },
+
+
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
@@ -269,7 +327,7 @@ require('lazy').setup({
   -- { import = 'custom.plugins' },
 }, {})
 
--- [[ Setting options ]]
+-- req-- [[ Setting options ]]
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 
@@ -277,7 +335,7 @@ require('lazy').setup({
 vim.o.hlsearch = false
 
 -- Make line numbers default
-vim.wo.number = true
+vim.wo.relativenumber = true
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -285,7 +343,7 @@ vim.o.mouse = 'a'
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-vim.o.clipboard = 'unnamedplus'
+-- vim.o.clipboard = 'unnamedplus'
 
 -- Enable break indent
 vim.o.breakindent = true
@@ -565,7 +623,7 @@ require('mason-lspconfig').setup()
 local servers = {
   -- clangd = {},
   -- gopls = {},
-  -- pyright = {},
+  pyright = {},
   -- rust_analyzer = {},
   -- tsserver = {},
   -- html = { filetypes = { 'html', 'twig', 'hbs'} },
@@ -656,6 +714,36 @@ cmp.setup {
     { name = 'path' },
   },
 }
+vim.api.nvim_create_user_command("InsertTimestamp", "pu=strftime('%H:%M')", {})
+
+vim.keymap.set('n', '<leader>no', vim.cmd.ObsidianQuickSwitch, { desc = '[N]otes [O]pen (obsidian)' })
+vim.keymap.set('n', '<leader>nn', vim.cmd.ObsidianNew, { desc = '[N]otes [N]ew (obsidian)' })
+vim.keymap.set('n', '<leader>nt', vim.cmd.ObsidianToday, { desc = '[N]otes [T]oday (obsidian)' })
+
+vim.keymap.set('n', '<leader>wf', require('true-zen').ataraxis, { desc = '[W]indow [F]ocus' })
+
+vim.keymap.set('n', '<leader>ut', vim.cmd.InsertTimestamp, { desc = '[W]indow [F]ocus' })
+
+-- Load custom treesitter grammar for org filetype
+require('orgmode').setup_ts_grammar()
+
+-- Treesitter configuration
+require('nvim-treesitter.configs').setup {
+  -- If TS highlights are not enabled at all, or disabled via `disable` prop,
+  -- highlighting will fallback to default Vim syntax highlighting
+  highlight = {
+    enable = true,
+    -- Required for spellcheck, some LaTex highlights and
+    -- code block highlights that do not have ts grammar
+    additional_vim_regex_highlighting = {'org'},
+  },
+  ensure_installed = {'org'}, -- Or run :TSUpdate org
+}
+
+require('orgmode').setup({
+  -- org_agenda_files = {'~/Dropbox/org/*', '~/my-orgs/**/*'},
+  -- org_default_notes_file = '~/Dropbox/org/refile.org',
+})
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
